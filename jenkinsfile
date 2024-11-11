@@ -1,11 +1,13 @@
 pipeline {
     agent any
-
+    
     environment {
-        // Docker image name without the credentials (this will be set in the script block)
-        DOCKER_IMAGE = ""
+        // Replace 'docker-hub-credentials' with each user's Docker Hub credentials ID
+        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
+        // Set Docker image name using environment variable for Docker Hub username
+        DOCKER_IMAGE = "${DOCKERHUB_CREDENTIALS_USR}/awwin:${env.BUILD_NUMBER}"
     }
-
+    
     stages {
         stage('Checkout') {
             steps {
@@ -16,8 +18,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Set the Docker image name dynamically inside the script block after credentials are available
-                    DOCKER_IMAGE = "${DOCKERHUB_CREDENTIALS_USR}/awwin:${env.BUILD_NUMBER}"
                     // Build the Docker image using the user's Docker Hub username
                     bat "docker build -t ${DOCKER_IMAGE} ."
                 }
@@ -32,17 +32,12 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Login to DockerHub') {
             steps {
                 script {
-                    // Use the stored Docker Hub credentials for login
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
-                                                      usernameVariable: 'DOCKERHUB_CREDENTIALS_USR', 
-                                                      passwordVariable: 'DOCKERHUB_CREDENTIALS_PSW')]) {
-                        // Login to Docker Hub using the credentials from Jenkins
-                        bat "docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PSW}"
-                    }
+                    // Login to Docker Hub using the provided credentials
+                    bat "docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PSW}"
                 }
             }
         }
@@ -50,7 +45,7 @@ pipeline {
         stage('Push to DockerHub') {
             steps {
                 script {
-                    // Push the built image to Docker Hub
+                    // Push the image to the user's Docker Hub repository
                     bat "docker push ${DOCKER_IMAGE}"
                 }
             }
