@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Set Docker image name using environment variable for Docker Hub username
-        DOCKER_IMAGE = "${env.DOCKERHUB_CREDENTIALS_USR}/awwin:${env.BUILD_NUMBER}"
+        // Docker image name without the credentials (this will be set in the script block)
+        DOCKER_IMAGE = ""
     }
 
     stages {
@@ -16,6 +16,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Set the Docker image name dynamically inside the script block after credentials are available
+                    DOCKER_IMAGE = "${DOCKERHUB_CREDENTIALS_USR}/awwin:${env.BUILD_NUMBER}"
                     // Build the Docker image using the user's Docker Hub username
                     bat "docker build -t ${DOCKER_IMAGE} ."
                 }
